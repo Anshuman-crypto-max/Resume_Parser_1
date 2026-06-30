@@ -1,0 +1,126 @@
+openapi: 3.1.0
+info:
+  title: Resume Parser API
+  version: 1.0.0
+  description: REST API for resume upload, parsing, candidate search, comparison, ATS scoring, analytics, billing, and API keys.
+servers:
+  - url: https://your-vercel-domain.vercel.app
+security:
+  - bearerAuth: []
+paths:
+  /api/resumes/upload:
+    post:
+      summary: Upload and parse a resume
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Parsed resume or duplicate result
+  /api/candidates:
+    get:
+      summary: List candidates
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Candidate list
+  /api/search:
+    post:
+      summary: Search candidates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string }
+                skills:
+                  type: array
+                  items: { type: string }
+                location: { type: string }
+                education: { type: string }
+                company: { type: string }
+                availability: { type: string }
+      responses:
+        "200":
+          description: Search results
+  /api/ats:
+    post:
+      summary: Analyze resume against a job description
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resumeText, jobDescription]
+              properties:
+                resumeText: { type: string }
+                jobDescription: { type: string }
+                candidateId: { type: string }
+                resumeId: { type: string }
+                jobTitle: { type: string }
+      responses:
+        "200":
+          description: ATS report
+  /api/compare:
+    post:
+      summary: Compare candidates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [candidateIds]
+              properties:
+                candidateIds:
+                  type: array
+                  items: { type: string }
+                requiredSkills:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200":
+          description: Ranked comparison
+  /api/analytics:
+    get:
+      summary: Get analytics summary
+      responses:
+        "200":
+          description: Analytics metrics
+  /api/api-keys:
+    get:
+      summary: List API keys
+      responses:
+        "200":
+          description: API keys
+    post:
+      summary: Create API key
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                expiresAt: { type: string, format: date-time }
+      responses:
+        "200":
+          description: New API key secret
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

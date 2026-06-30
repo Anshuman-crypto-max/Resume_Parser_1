@@ -1,126 +1,71 @@
-# AI Resume Parser
+# Resume Parser
 
-A production-ready Streamlit application that extracts structured candidate information from PDF and DOCX resumes using OpenAI GPT-4o or Google Gemini. The app turns unstructured resumes into clean JSON and Excel exports for HR review.
+Resume Parser is an AI SaaS application for HR teams that extracts structured candidate data from resumes, stores searchable profiles, compares candidates, generates ATS reports, tracks analytics, and exports hiring data.
+
+The repository now contains a Next.js 15 SaaS implementation plus the original Streamlit prototype in `app.py`.
+
+## Stack
+
+- Next.js 15 App Router, React 19, TypeScript, Tailwind CSS, Framer Motion
+- Clerk authentication with organizations
+- Prisma ORM, Supabase Postgres, pgvector, Supabase Storage
+- OpenAI parsing, ATS analysis, embeddings, and RAG-ready data model
+- Upstash Redis rate limiting
+- Stripe subscriptions and billing portal flow
+- Resend email notifications
+- Vitest, Playwright, GitHub Actions CI
 
 ## Features
 
-- Upload `.pdf` and `.docx` resumes.
-- Extract candidate name, contact details, LinkedIn/GitHub URLs, education, work experience, projects, certifications, categorized skills, and candidate fit evaluation.
-- Strict Pydantic schema validation for AI output.
-- Graceful handling for corrupt files, short/image-only documents, API failures, and schema errors.
-- Polished green/white Streamlit interface with expandable result sections.
-- Download parsed output as JSON or Excel.
-- Dockerized with a multi-stage production build and health check.
+- Landing page with hero, navbar, animated upload illustration, features, benefits, how it works, pricing, FAQ, testimonials-ready sections, footer, CTA, dark-mode tokens, SEO metadata, sitemap, and robots.
+- Protected dashboard with sidebar navigation for candidates, upload, compare, ATS analyzer, analytics, settings, billing, API keys, usage, profile, and admin.
+- PDF and DOCX upload endpoint with validation, duplicate detection, storage, text extraction, AI parsing, audit logs, and usage logs.
+- Structured extraction schema for contact details, links, address, experience, education, skills, certifications, languages, projects, achievements, summary, companies, dates, salary, notice period, location, keywords, soft skills, and hard skills.
+- Candidate search, filters, comparison, ATS scoring, analytics, API key management, Stripe checkout, and Stripe webhook support.
+- Production database schema for all requested tables and operational concerns.
 
-## Local Setup
+## Local Development
 
-1. Create and activate a virtual environment.
+```bash
+npm install
+cp .env.example .env.local
+npm run prisma:generate
+npm run prisma:migrate
+npm run dev
+```
 
-   ```powershell
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   ```
+Open `http://localhost:3000`.
 
-2. Install dependencies.
+## Environment
 
-   ```powershell
-   pip install -r requirements.txt
-   ```
+Copy `.env.example` and configure Clerk, Supabase, OpenAI, Upstash, Stripe, and Resend. Supabase must have the `vector` extension enabled and a private `resumes` storage bucket.
 
-3. Configure an API key.
+## Commands
 
-   ```powershell
-   $env:OPENAI_API_KEY="your_openai_api_key"
-   ```
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run typecheck
+npm test
+npm run test:e2e
+npm run prisma:deploy
+```
 
-   Or, for Gemini:
+## Documentation
 
-   ```powershell
-   $env:GEMINI_API_KEY="your_gemini_api_key"
-   ```
+- [Architecture](docs/architecture.md)
+- [ER Diagram](docs/er-diagram.md)
+- [OpenAPI](docs/openapi.yaml)
+- [Deployment](docs/deployment.md)
+- [Testing](docs/testing.md)
+- [Developer Guide](docs/developer.md)
 
-   You can also enter either key directly in the app sidebar at runtime.
+## Legacy Streamlit App
 
-4. Run the app.
-
-   ```powershell
-   streamlit run app.py
-   ```
-
-5. Open the local URL printed by Streamlit, usually:
-
-   ```text
-   http://localhost:8501
-   ```
-
-## Environment Variables
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | Required for OpenAI mode | Authenticates requests to OpenAI. |
-| `GEMINI_API_KEY` | Required for Gemini mode | Authenticates requests to Google Gemini. |
-
-The sidebar input takes precedence over environment variables for the current session.
-
-## Docker
-
-Build the image:
+The previous Streamlit implementation remains in `app.py` and can still be run with:
 
 ```powershell
-docker build -t ai-resume-parser .
+pip install -r requirements.txt
+streamlit run app.py
 ```
-
-Run with OpenAI:
-
-```powershell
-docker run --rm -p 8501:8501 -e OPENAI_API_KEY="your_openai_api_key" ai-resume-parser
-```
-
-Run with Gemini:
-
-```powershell
-docker run --rm -p 8501:8501 -e GEMINI_API_KEY="your_gemini_api_key" ai-resume-parser
-```
-
-Then open:
-
-```text
-http://localhost:8501
-```
-
-## Streamlit Community Cloud Deployment
-
-1. Push this repository to GitHub.
-2. Go to Streamlit Community Cloud and create a new app from the repository.
-3. Set the main file path to `app.py`.
-4. Add `OPENAI_API_KEY` or `GEMINI_API_KEY` in the app secrets.
-5. Deploy.
-
-For Streamlit secrets, use:
-
-```toml
-OPENAI_API_KEY = "your_openai_api_key"
-GEMINI_API_KEY = "your_gemini_api_key"
-```
-
-## Render Deployment
-
-1. Push this repository to GitHub.
-2. Create a new Render Web Service.
-3. Choose Docker as the runtime.
-4. Set environment variables:
-
-   ```text
-   OPENAI_API_KEY=your_openai_api_key
-   GEMINI_API_KEY=your_gemini_api_key
-   ```
-
-5. Use port `8501`.
-6. Deploy the service.
-
-## Production Notes
-
-- The app processes uploaded files in memory and does not persist resumes.
-- Scanned image-only PDFs require OCR before upload.
-- For sensitive HR workflows, run behind your organization's authentication layer and keep provider API keys in managed secrets.
-- Use OpenAI mode with `gpt-4o` or Gemini mode with `gemini-1.5-pro` by default; both can be changed from the sidebar.

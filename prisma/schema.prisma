@@ -1,0 +1,379 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  RECRUITER
+  VIEWER
+}
+
+enum CandidateStatus {
+  NEW
+  REVIEWING
+  SHORTLISTED
+  INTERVIEWING
+  OFFER
+  HIRED
+  REJECTED
+  ARCHIVED
+}
+
+enum ResumeStatus {
+  UPLOADED
+  PARSING
+  PARSED
+  FAILED
+  DUPLICATE
+  QUARANTINED
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+model User {
+  id            String             @id @default(cuid())
+  clerkId       String             @unique
+  email         String             @unique
+  name          String?
+  imageUrl      String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  organizations OrganizationUser[]
+  notes         CandidateNote[]
+  apiKeys       ApiKey[]
+  usageLogs     UsageLog[]
+  auditLogs     AuditLog[]
+}
+
+model Organization {
+  id                 String             @id @default(cuid())
+  clerkOrgId         String?            @unique
+  name               String
+  slug               String             @unique
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  users              OrganizationUser[]
+  candidates         Candidate[]
+  resumes            Resume[]
+  skills             Skill[]
+  atsScores          AtsScore[]
+  analyticsEvents    AnalyticsEvent[]
+  apiKeys            ApiKey[]
+  usageLogs          UsageLog[]
+  billing            BillingAccount?
+  auditLogs          AuditLog[]
+  featureFlags       FeatureFlag[]
+}
+
+model OrganizationUser {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole      @default(RECRUITER)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model Candidate {
+  id               String            @id @default(cuid())
+  organizationId   String
+  fullName         String
+  email            String?
+  phone            String?
+  linkedin         String?
+  github           String?
+  portfolio        String?
+  address          String?
+  location         String?
+  currentSalary    Int?
+  expectedSalary   Int?
+  noticePeriod     String?
+  summary          String?
+  status           CandidateStatus   @default(NEW)
+  tags             String[]          @default([])
+  keywords         String[]          @default([])
+  softSkills       String[]          @default([])
+  hardSkills       String[]          @default([])
+  source           String            @default("upload")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  resumes          Resume[]
+  skills           CandidateSkill[]
+  experiences      Experience[]
+  education        Education[]
+  projects         Project[]
+  certifications   Certification[]
+  languages        CandidateLanguage[]
+  atsScores        AtsScore[]
+  notes            CandidateNote[]
+  embeddings       Embedding[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, email])
+  @@index([organizationId, location])
+}
+
+model Resume {
+  id             String       @id @default(cuid())
+  organizationId String
+  candidateId    String?
+  fileName       String
+  fileType       String
+  fileSize       Int
+  storagePath    String
+  checksum       String
+  rawText        String?
+  parsedJson     Json?
+  status         ResumeStatus @default(UPLOADED)
+  virusScan      Json?
+  uploadedAt     DateTime     @default(now())
+  parsedAt       DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate      Candidate?   @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  atsScores      AtsScore[]
+
+  @@unique([organizationId, checksum])
+  @@index([organizationId, status])
+}
+
+model Skill {
+  id             String            @id @default(cuid())
+  organizationId String
+  name           String
+  category       String            @default("technical")
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidates     CandidateSkill[]
+
+  @@unique([organizationId, name])
+}
+
+model CandidateSkill {
+  candidateId String
+  skillId     String
+  confidence  Float  @default(1)
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([candidateId, skillId])
+}
+
+model Experience {
+  id           String    @id @default(cuid())
+  candidateId  String
+  company      String
+  designation  String
+  location     String?
+  startDate    String?
+  endDate      String?
+  duration     String?
+  description  String?
+  achievements String[]  @default([])
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([company])
+}
+
+model Education {
+  id          String    @id @default(cuid())
+  candidateId String
+  institution String
+  degree      String?
+  field       String?
+  startYear   String?
+  endYear     String?
+  grade       String?
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([institution])
+}
+
+model Project {
+  id           String    @id @default(cuid())
+  candidateId  String
+  name         String
+  description  String?
+  url          String?
+  technologies String[]  @default([])
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+model Certification {
+  id          String    @id @default(cuid())
+  candidateId String
+  name        String
+  issuer      String?
+  issuedAt    String?
+  expiresAt   String?
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+model Language {
+  id         String              @id @default(cuid())
+  name       String              @unique
+  candidates CandidateLanguage[]
+}
+
+model CandidateLanguage {
+  candidateId String
+  languageId  String
+  proficiency String?
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  language    Language  @relation(fields: [languageId], references: [id], onDelete: Cascade)
+
+  @@id([candidateId, languageId])
+}
+
+model AtsScore {
+  id             String       @id @default(cuid())
+  organizationId String
+  candidateId    String?
+  resumeId       String?
+  jobTitle       String?
+  jobDescription String
+  score          Int
+  missingSkills  String[]     @default([])
+  strengths      String[]     @default([])
+  weaknesses     String[]     @default([])
+  suggestions    String[]     @default([])
+  improvedResume String?
+  keywords       String[]     @default([])
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate      Candidate?   @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  resume         Resume?      @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, score])
+}
+
+model CandidateNote {
+  id          String    @id @default(cuid())
+  candidateId String
+  userId      String
+  body        String
+  createdAt   DateTime  @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Embedding {
+  id          String                 @id @default(cuid())
+  candidateId String
+  content     String
+  contentType String
+  vector      Unsupported("vector")?
+  createdAt   DateTime               @default(now())
+  candidate   Candidate              @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model AnalyticsEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  properties     Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, name, createdAt])
+}
+
+model ApiKey {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  name           String
+  prefix         String
+  hashedKey      String
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([prefix])
+  @@index([organizationId])
+}
+
+model UsageLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  quantity       Int          @default(1)
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, action, createdAt])
+}
+
+model BillingAccount {
+  id                   String             @id @default(cuid())
+  organizationId        String             @unique
+  stripeCustomerId      String?            @unique
+  stripeSubscriptionId  String?            @unique
+  plan                 SubscriptionPlan   @default(FREE)
+  status               SubscriptionStatus @default(TRIALING)
+  trialEndsAt          DateTime?
+  currentPeriodEndsAt  DateTime?
+  monthlyResumeLimit   Int                @default(50)
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json         @default("{}")
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, action, createdAt])
+}
+
+model FeatureFlag {
+  id             String       @id @default(cuid())
+  organizationId String
+  key            String
+  enabled        Boolean      @default(false)
+  payload        Json         @default("{}")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+}
