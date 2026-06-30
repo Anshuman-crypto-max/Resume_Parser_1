@@ -12,7 +12,7 @@ npm run dev
 
 ## Data Flow
 
-1. Recruiter uploads a PDF or DOCX in `/dashboard/upload`.
+1. Recruiter uploads a PDF, DOCX, or DOC in `/dashboard/upload`.
 2. `/api/resumes/upload` validates file type and size, extracts text, computes checksum, checks duplicates, uploads the source file to Supabase Storage, calls OpenAI for strict JSON extraction, and stores candidate records.
 3. Search routes query normalized fields and are ready for pgvector semantic ranking.
 4. ATS routes compare resume text with a job description and persist score reports.

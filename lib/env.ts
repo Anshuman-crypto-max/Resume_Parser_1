@@ -4,7 +4,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1).optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   OPENAI_API_KEY: z.string().optional(),
-  OPENAI_MODEL: z.string().default("gpt-5.5"),
+  OPENAI_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_EMBEDDING_MODEL: z.string().default("text-embedding-3-large"),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),

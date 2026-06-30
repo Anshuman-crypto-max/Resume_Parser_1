@@ -2,8 +2,14 @@
   "name": "resume-parser-saas",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
+    "dev:web": "next dev",
+    "dev:api": "uvicorn apps.api.resume_parser_api.main:app --reload --port 8000",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
@@ -12,7 +18,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:api": "pytest apps/api/tests"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.0",
@@ -29,6 +36,8 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@stripe/stripe-js": "^7.8.0",
     "@supabase/supabase-js": "^2.56.0",
+    "@tanstack/react-query": "^5.85.5",
+    "@tanstack/react-table": "^8.21.3",
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.3",
     "class-variance-authority": "^0.7.1",
@@ -42,6 +51,7 @@
     "prisma": "^6.14.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.62.0",
     "recharts": "^3.1.2",
     "resend": "^6.0.1",

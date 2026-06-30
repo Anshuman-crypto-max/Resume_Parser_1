@@ -20,7 +20,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "file exceeds 15MB limit" }, { status: 413 });
   }
 
-  const { text, checksum } = await extractTextFromFile(file);
+  let extracted: Awaited<ReturnType<typeof extractTextFromFile>>;
+  try {
+    extracted = await extractTextFromFile(file);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unsupported resume file" }, { status: 422 });
+  }
+  const { text, checksum } = extracted;
   if (text.length < 80) {
     return NextResponse.json({ error: "resume text is too short or image-only" }, { status: 422 });
   }

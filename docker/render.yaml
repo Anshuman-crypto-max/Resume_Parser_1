@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: resume-parser-api
+    env: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    healthCheckPath: /health
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
